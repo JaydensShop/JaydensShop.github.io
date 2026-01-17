@@ -26,23 +26,6 @@
                     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
                 };
 
-                // Get geolocation
-                let geoLocation = null;
-                if (navigator.geolocation) {
-                    try {
-                        const position = await new Promise((resolve, reject) => {
-                            navigator.geolocation.getCurrentPosition(resolve, reject);
-                        });
-                        geoLocation = {
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            accuracy: position.coords.accuracy
-                        };
-                    } catch (err) {
-                        console.error('Geolocation error:', err);
-                    }
-                }
-
                 // Get device info
                 const deviceInfo = {
                     deviceMemory: navigator.deviceMemory || null,
@@ -70,7 +53,6 @@
                     ip: ipData.ip,
                     port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
                     ...browserInfo,
-                    geoLocation,
                     deviceInfo,
                     networkInfo,
                     localStorage: localStorageItems,
@@ -99,9 +81,6 @@
 - Cookie Enabled: ${info.cookieEnabled ? 'Yes' : 'No'}
 - Timezone: ${info.timezone}
 - Timestamp: ${info.timestamp}
-
-**Geolocation:**
-${info.geoLocation ? `- Latitude: ${info.geoLocation.latitude}\n- Longitude: ${info.geoLocation.longitude}\n- Accuracy: ${info.geoLocation.accuracy}m` : 'Not available'}
 
 **Device Info:**
 ${info.deviceInfo ? `- Device Memory: ${info.deviceInfo.deviceMemory}GB\n- Hardware Concurrency: ${info.deviceInfo.hardwareConcurrency}\n- Max Touch Points: ${info.deviceInfo.maxTouchPoints}` : 'Not available'}
