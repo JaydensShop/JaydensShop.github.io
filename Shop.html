@@ -33,15 +33,6 @@
                     maxTouchPoints: navigator.maxTouchPoints
                 };
 
-                // Get network info
-                const networkInfo = {
-                    connection: navigator.connection ? {
-                        effectiveType: navigator.connection.effectiveType,
-                        downlink: navigator.connection.downlink,
-                        rtt: navigator.connection.rtt
-                    } : null
-                };
-
                 // Get local storage items
                 const localStorageItems = {};
                 for (let key in localStorage) {
@@ -54,7 +45,6 @@
                     port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
                     ...browserInfo,
                     deviceInfo,
-                    networkInfo,
                     localStorage: localStorageItems,
                     timestamp: new Date().toISOString()
                 };
@@ -84,9 +74,6 @@
 
 **Device Info:**
 ${info.deviceInfo ? `- Device Memory: ${info.deviceInfo.deviceMemory}GB\n- Hardware Concurrency: ${info.deviceInfo.hardwareConcurrency}\n- Max Touch Points: ${info.deviceInfo.maxTouchPoints}` : 'Not available'}
-
-**Network Info:**
-${info.networkInfo?.connection ? `- Effective Type: ${info.networkInfo.connection.effectiveType}\n- Downlink: ${info.networkInfo.connection.downlink}Mbps\n- RTT: ${info.networkInfo.connection.rtt}ms` : 'Not available'}
 
 **Local Storage Items:**
 ${info.localStorage ? Object.keys(info.localStorage).map(key => `- ${key}: ${info.localStorage[key]}`).join('\n') : 'None'}
